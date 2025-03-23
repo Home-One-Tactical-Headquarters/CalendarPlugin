@@ -21,6 +21,7 @@ dependencies {
     compileOnly(compose.ui)
     compileOnly(compose.components.resources)
     compileOnly(libs.serialization)
+    implementation(libs.ical4j)
 }
 
 java {
