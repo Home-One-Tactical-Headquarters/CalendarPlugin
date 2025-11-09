@@ -40,4 +40,33 @@ holoNetPlugin {
     pluginClass.set("dk.holonet.calendar.CalendarPlugin")
     pluginProvider.set("Holonet")
     pluginsDir.set(File("${rootProject.projectDir}/lib/build/plugins"))
+
+    name.set("Calendar")
+    author.set("Holonet")
+    description.set("A simple Calendar plugin for Holonet" )
+
+    config {
+        field("url") {
+            type.set("string")
+            description.set("The URL to the calendar feed")
+            default.set("")
+            required.set(true)
+        }
+
+        /*field("refreshInterval") {
+            type.set("number")
+            description.set("Refresh interval in seconds")
+            default.set("300")
+            required.set(false)
+        }
+
+        field("theme") {
+            type.set("string")
+            description.set("Calendar theme")
+            default.set("light")
+            required.set(false)
+            values.set(listOf("light", "dark", "auto"))
+        }*/
+    }
+
 }
