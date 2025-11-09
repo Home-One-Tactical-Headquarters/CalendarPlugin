@@ -25,8 +25,6 @@ class CalendarViewModel(
     val _state = MutableStateFlow<List<Event>>(emptyList())
     val state = _state.asStateFlow()
 
-
-
     fun fetch(calendarUrl: String) {
         viewModelScope.launch {
             val response = httpClient.get(calendarUrl)
