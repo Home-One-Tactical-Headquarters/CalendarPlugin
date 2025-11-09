@@ -1,0 +1,15 @@
+{
+  "name": "Calendar",
+  "pluginId": "calendar",
+  "author": "Holonet",
+  "description": "A simple calendar plugin",
+  "version": "1.0.0",
+  "config": {
+    "url": {
+      "type": "string",
+      "description": "The URL to the calendar feed",
+      "default": "",
+      "required": true
+    }
+  }
+}
