@@ -67,6 +67,13 @@ holoNetPlugin {
             required.set(false)
         }
 
+        field("enableGradient") {
+            type.set("boolean")
+            description.set("Enable gradient overlay for overflowing events")
+            default.set("true")
+            required.set(false)
+        }
+
         /*field("theme") {
             type.set("string")
             description.set("Calendar theme")

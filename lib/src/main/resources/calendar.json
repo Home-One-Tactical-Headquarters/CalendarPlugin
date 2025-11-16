@@ -22,6 +22,12 @@
             "description": "Maximum number of events to display",
             "default": "5",
             "required": false
+        },
+        "enableGradient": {
+            "type": "boolean",
+            "description": "Enable gradient overlay for overflowing events",
+            "default": "true",
+            "required": false
         }
     }
 }
