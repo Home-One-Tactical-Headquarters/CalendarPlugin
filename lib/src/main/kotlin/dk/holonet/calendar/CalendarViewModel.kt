@@ -16,7 +16,7 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-
+import kotlin.text.format
 
 class CalendarViewModel(
     private val httpClient: HttpClient
@@ -26,6 +26,7 @@ class CalendarViewModel(
     val state = _state.asStateFlow()
 
     fun fetch(calendarUrl: String) {
+        println("System zone: $systemZone")
         viewModelScope.launch {
             val response = httpClient.get(calendarUrl)
             val icalData = response.bodyAsText()
@@ -62,11 +63,16 @@ class CalendarViewModel(
     }
 
     private fun parseDateTime(dateValue: String): Instant {
-        return if (dateValue.contains("T")) {
-            Instant.from(dateTimeFormatter.parse(dateValue))
+        return if (dateValue.contains("T") && dateValue.endsWith("Z")) {
+            // Parse as UTC using the custom formatter, then convert to Instant
+            java.time.ZonedDateTime.parse(dateValue, dateTimeFormatter.withZone(java.time.ZoneOffset.UTC)).toInstant()
+        } else if (dateValue.contains("T")) {
+            LocalDate.parse(dateValue, dateFormatter)
+                .atStartOfDay(systemZone)
+                .toInstant()
         } else {
             LocalDate.parse(dateValue, dateFormatter)
-                .atStartOfDay(ZoneOffset.systemDefault())
+                .atStartOfDay(systemZone)
                 .toInstant()
         }
     }
@@ -78,18 +84,20 @@ class CalendarViewModel(
     )
 }
 
+private val systemZone = java.time.ZoneId.systemDefault()
+
 fun Instant.toPrettyString(): String {
-    return prettyFormatter.format(this)
+    return prettyFormatter.format(this.atZone(systemZone))
 }
 
 private val dateTimeFormatter = DateTimeFormatter
     .ofPattern("yyyyMMdd'T'HHmmss'Z'")
-    .withZone(ZoneOffset.systemDefault())
+    .withZone(ZoneOffset.UTC)
 
 private val dateFormatter = DateTimeFormatter
     .ofPattern("yyyyMMdd")
-    .withZone(ZoneOffset.systemDefault())
+    .withZone(systemZone)
 
 private val prettyFormatter = DateTimeFormatter
     .ofPattern("dd/MM HH:mm")
-    .withZone(ZoneOffset.systemDefault())
+    .withZone(systemZone)
