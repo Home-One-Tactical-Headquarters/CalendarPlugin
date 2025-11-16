@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -16,50 +18,62 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import kotlin.text.format
 
 class CalendarViewModel(
     private val httpClient: HttpClient
 ): ViewModel() {
 
-    val _state = MutableStateFlow<List<Event>>(emptyList())
-    val state = _state.asStateFlow()
+    private val _events = MutableStateFlow<List<Event>>(emptyList())
+    val events = _events.asStateFlow()
 
-    fun fetch(calendarUrl: String) {
-        println("System zone: $systemZone")
-        viewModelScope.launch {
-            val response = httpClient.get(calendarUrl)
-            val icalData = response.bodyAsText()
+    private var refreshJob: Job? = null
 
-            val reader = StringReader(icalData)
-            val calendar = CalendarBuilder().build(reader)
-
-            val now = Instant.now()
-
-            val upcomingEvents = calendar.getComponents<VEvent>("VEVENT")
-                .mapNotNull { event ->
-                    val startDate = event.getDateTimeStart<OffsetDateTime>() ?: return@mapNotNull null
-                    val endDate = event.getDateTimeEnd<OffsetDateTime>()
-
-                    val startDateValue = startDate.value
-                    val endDateValue = endDate.value
-
-                    val startEventTime = parseDateTime(startDateValue)
-                    val endEventTime = parseDateTime(endDateValue)
-
-                    if (startEventTime.isAfter(now)) {
-                        Event(
-                            summary = event.summary.value,
-                            startDate = startEventTime,
-                            endDate = endEventTime
-                        )
-                    } else null
-                }
-                .sortedBy { event -> event.startDate }
-                .take(5)
-
-            _state.value = upcomingEvents
+    fun startAutoRefresh(calendarUrl: String, refreshIntervalSeconds: Int, maxEvents: Int) {
+        refreshJob = viewModelScope.launch {
+            while (true) {
+                fetch(calendarUrl, maxEvents)
+                delay(refreshIntervalSeconds * 1000L)
+            }
         }
+    }
+
+    fun stopAutoRefresh() {
+        refreshJob?.cancel()
+        refreshJob = null
+    }
+
+    suspend fun fetch(calendarUrl: String, maxEvents: Int) {
+        val response = httpClient.get(calendarUrl)
+        val iCalData = response.bodyAsText()
+
+        val reader = StringReader(iCalData)
+        val calendar = CalendarBuilder().build(reader)
+
+        val now = Instant.now()
+
+        val upcomingEvents = calendar.getComponents<VEvent>("VEVENT")
+            .mapNotNull { event ->
+                val startDate = event.getDateTimeStart<OffsetDateTime>() ?: return@mapNotNull null
+                val endDate = event.getDateTimeEnd<OffsetDateTime>()
+
+                val startDateValue = startDate.value
+                val endDateValue = endDate.value
+
+                val startEventTime = parseDateTime(startDateValue)
+                val endEventTime = parseDateTime(endDateValue)
+
+                if (startEventTime.isAfter(now)) {
+                    Event(
+                        summary = event.summary.value,
+                        startDate = startEventTime,
+                        endDate = endEventTime
+                    )
+                } else null
+            }
+            .sortedBy { event -> event.startDate }
+            .take(maxEvents)
+
+        _events.value = upcomingEvents
     }
 
     private fun parseDateTime(dateValue: String): Instant {

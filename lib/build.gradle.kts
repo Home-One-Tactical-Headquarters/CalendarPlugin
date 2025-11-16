@@ -53,14 +53,21 @@ holoNetPlugin {
             required.set(true)
         }
 
-        /*field("refreshInterval") {
+        field("refreshInterval") {
             type.set("number")
             description.set("Refresh interval in seconds")
             default.set("300")
             required.set(false)
         }
 
-        field("theme") {
+        field("maxEvents") {
+            type.set("number")
+            description.set("Maximum number of events to display")
+            default.set("5")
+            required.set(false)
+        }
+
+        /*field("theme") {
             type.set("string")
             description.set("Calendar theme")
             default.set("light")

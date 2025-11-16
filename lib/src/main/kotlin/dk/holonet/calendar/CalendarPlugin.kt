@@ -15,22 +15,31 @@ import androidx.compose.ui.unit.dp
 import dk.holonet.core.HoloNetModule
 import dk.holonet.core.HoloNetPlugin
 import dk.holonet.core.ModuleConfiguration
+import dk.holonet.core.asInt
 import dk.holonet.core.asString
+import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 
-class CalendarPlugin(wrapper: PluginWrapper) : HoloNetPlugin(wrapper) {
+class CalendarPlugin(wrapper: PluginWrapper) : HoloNetPlugin(wrapper), KoinComponent {
 
     private val module = module {
         viewModel { CalendarViewModel(get()) }
     }
 
+    private val viewModel: CalendarViewModel by inject()
+
     override fun start() {
         super.start()
         loadDependencies(module)
+    }
+
+    override fun stop() {
+        super.stop()
+        viewModel.stopAutoRefresh()
     }
 
     @Extension
@@ -40,7 +49,7 @@ class CalendarPlugin(wrapper: PluginWrapper) : HoloNetPlugin(wrapper) {
 
         @Composable
         override fun render() {
-            val state = viewModel.state.collectAsState()
+            val events = viewModel.events.collectAsState()
 
             Column(
                 modifier = Modifier.wrapContentWidth(Alignment.Start)
@@ -53,7 +62,7 @@ class CalendarPlugin(wrapper: PluginWrapper) : HoloNetPlugin(wrapper) {
                         .padding(vertical = 4.dp)
                 )
 
-                state.value.forEach { event ->
+                events.value.forEach { event ->
                     Row(
                         modifier = Modifier.padding(8.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp, alignment = Alignment.Start)
@@ -72,12 +81,18 @@ class CalendarPlugin(wrapper: PluginWrapper) : HoloNetPlugin(wrapper) {
             super.configure(configuration)
 
             var url: String? = null
+            var refreshInterval = 300 // Default to 300 seconds (5 minutes)
+            var maxEvents = 5 // Default to 5 events
 
             configuration?.config?.let { props ->
                 props["url"]?.let { url = it.asString() }
+                props["refreshInterval"]?.let { refreshInterval = it.asInt() }
+                props["maxEvents"]?.let { maxEvents = it.asInt() }
             }
 
-            url?.let { viewModel.fetch(it) } ?: println("No URL provided")
+            url?.let { url ->
+                viewModel.startAutoRefresh(url, refreshInterval, maxEvents)
+            } ?: println("No URL provided")
         }
     }
 }

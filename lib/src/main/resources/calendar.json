@@ -10,6 +10,18 @@
             "description": "The URL to the calendar feed",
             "default": "",
             "required": true
+        },
+        "refreshInterval": {
+            "type": "number",
+            "description": "Refresh interval in seconds",
+            "default": "300",
+            "required": false
+        },
+        "maxEvents": {
+            "type": "number",
+            "description": "Maximum number of events to display",
+            "default": "5",
+            "required": false
         }
     }
 }
