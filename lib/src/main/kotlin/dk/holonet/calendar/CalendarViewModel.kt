@@ -114,11 +114,9 @@ fun Long.toReadableDuration(): String {
     val minutes = totalMinutes % 60
 
     return when {
-        days >= 2 -> "$days Days"
-        days > 0 -> "$days Day"
-        hours > 1 -> "$hours hours, $minutes minutes"
-        hours > 0 -> "$hours hour, $minutes minutes"
-        else -> "$minutes minutes"
+        days > 0 -> "${days}d"
+        hours > 0 -> "${hours}h, ${minutes}m"
+        else -> "${minutes}m"
     }
 }
 

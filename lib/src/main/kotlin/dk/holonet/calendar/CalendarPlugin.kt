@@ -94,13 +94,12 @@ class CalendarPlugin(wrapper: PluginWrapper) : HoloNetPlugin(wrapper), KoinCompo
                                 },
                             horizontalArrangement = Arrangement.spacedBy(16.dp, alignment = Alignment.Start)
                         ) {
-                            Text(
-                                text = event.startDate.toPrettyString(event.isAllDay),
-                                modifier = Modifier.width(100.dp)
-                            )
-                            Text(event.summary)
+                            Text(text = event.startDate.toPrettyString(event.isAllDay))
+
                             if (index < maxEventsToShowTimeUntil) {
-                                Text("(${event.timeUntil.toReadableDuration()})")
+                                Text("${event.summary} (${event.timeUntil.toReadableDuration()})")
+                            } else {
+                                Text(event.summary)
                             }
                         }
                     }
