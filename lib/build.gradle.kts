@@ -67,6 +67,13 @@ holoNetPlugin {
             required.set(false)
         }
 
+        field("maxTimeUntilEvent") {
+            type.set("number")
+            description.set("How many events to show time until event. Caps at maxEvents if set higher")
+            default.set("1")
+            required.set(false)
+        }
+
         field("enableGradient") {
             type.set("boolean")
             description.set("Enable gradient overlay for overflowing events")

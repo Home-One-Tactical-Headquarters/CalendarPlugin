@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -39,7 +37,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
-import kotlin.text.compareTo
+import kotlin.math.min
 
 class CalendarPlugin(wrapper: PluginWrapper) : HoloNetPlugin(wrapper), KoinComponent {
 
@@ -64,6 +62,7 @@ class CalendarPlugin(wrapper: PluginWrapper) : HoloNetPlugin(wrapper), KoinCompo
 
         private val viewModel: CalendarViewModel by inject()
         private var enableGradient = true
+        private var maxEventsToShowTimeUntil by mutableStateOf(1)
 
         @Composable
         override fun render() {
@@ -100,6 +99,9 @@ class CalendarPlugin(wrapper: PluginWrapper) : HoloNetPlugin(wrapper), KoinCompo
                                 modifier = Modifier.width(100.dp)
                             )
                             Text(event.summary)
+                            if (index < maxEventsToShowTimeUntil) {
+                                Text("(${event.timeUntil.toReadableDuration()})")
+                            }
                         }
                     }
 
@@ -137,6 +139,7 @@ class CalendarPlugin(wrapper: PluginWrapper) : HoloNetPlugin(wrapper), KoinCompo
                 props["refreshInterval"]?.let { refreshInterval = it.asInt() }
                 props["maxEvents"]?.let { maxEvents = it.asInt() }
                 props["enableGradient"]?.let { enableGradient = it.asBoolean() }
+                props["maxTimeUntilEvent"]?.let { maxEventsToShowTimeUntil = min(it.asInt(), maxEvents) }
             }
 
             url?.let { url ->

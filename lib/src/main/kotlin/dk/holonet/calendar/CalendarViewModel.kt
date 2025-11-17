@@ -71,6 +71,7 @@ class CalendarViewModel(
                     summary = event.summary.value,
                     startDate = startEventTime,
                     endDate = endEventTime,
+                    timeUntil = startEventTime.epochSecond - now.epochSecond,
                     isAllDay = !startDateValue.contains("T")
                 )
             }
@@ -99,11 +100,27 @@ class CalendarViewModel(
         val summary: String,
         val startDate: Instant,
         val endDate: Instant,
+        val timeUntil: Long,
         val isAllDay: Boolean = false
     )
 }
 
 private val systemZone = java.time.ZoneId.systemDefault()
+
+fun Long.toReadableDuration(): String {
+    val totalMinutes = this / 60
+    val days = totalMinutes / (60 * 24)
+    val hours = (totalMinutes / 60) % 24
+    val minutes = totalMinutes % 60
+
+    return when {
+        days >= 2 -> "$days Days"
+        days > 0 -> "$days Day"
+        hours > 1 -> "$hours hours, $minutes minutes"
+        hours > 0 -> "$hours hour, $minutes minutes"
+        else -> "$minutes minutes"
+    }
+}
 
 fun Instant.toPrettyString(isAllDay: Boolean): String {
     return if (isAllDay) prettyDateFormatter.format(this.atZone(systemZone)) + " All day"

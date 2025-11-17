@@ -23,6 +23,12 @@
             "default": "5",
             "required": false
         },
+        "maxTimeUntilEvent": {
+            "type": "number",
+            "description": "How many events to show time until event. Caps at maxEvents if set higher",
+            "default": "1",
+            "required": false
+        },
         "enableGradient": {
             "type": "boolean",
             "description": "Enable gradient overlay for overflowing events",
