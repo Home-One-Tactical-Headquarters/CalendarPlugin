@@ -51,6 +51,9 @@ class CalendarViewModel(
 
         val now = Instant.now()
 
+        // TODO: Use calendar name. Maybe do it per calendar if supporting multiple calendars
+//        val calendarName = calendar.getProperty<Property>("X-WR-CALNAME").get().value ?: "Calendar"
+
         val upcomingEvents = calendar.getComponents<VEvent>("VEVENT")
             .mapNotNull { event ->
                 val startDate = event.getDateTimeStart<OffsetDateTime>() ?: return@mapNotNull null
