@@ -62,13 +62,14 @@ class CalendarViewModel(
                 val startEventTime = parseDateTime(startDateValue)
                 val endEventTime = parseDateTime(endDateValue)
 
-                if (startEventTime.isAfter(now)) {
-                    Event(
-                        summary = event.summary.value,
-                        startDate = startEventTime,
-                        endDate = endEventTime
-                    )
-                } else null
+                if (!startEventTime.isAfter(now)) return@mapNotNull null
+
+                Event(
+                    summary = event.summary.value,
+                    startDate = startEventTime,
+                    endDate = endEventTime,
+                    isAllDay = !startDateValue.contains("T")
+                )
             }
             .sortedBy { event -> event.startDate }
             .take(maxEvents)
@@ -94,14 +95,16 @@ class CalendarViewModel(
     data class Event(
         val summary: String,
         val startDate: Instant,
-        val endDate: Instant
+        val endDate: Instant,
+        val isAllDay: Boolean = false
     )
 }
 
 private val systemZone = java.time.ZoneId.systemDefault()
 
-fun Instant.toPrettyString(): String {
-    return prettyFormatter.format(this.atZone(systemZone))
+fun Instant.toPrettyString(isAllDay: Boolean): String {
+    return if (isAllDay) prettyDateFormatter.format(this.atZone(systemZone)) + " All day"
+    else prettyDateTimeFormatter.format(this.atZone(systemZone))
 }
 
 private val dateTimeFormatter = DateTimeFormatter
@@ -112,6 +115,10 @@ private val dateFormatter = DateTimeFormatter
     .ofPattern("yyyyMMdd")
     .withZone(systemZone)
 
-private val prettyFormatter = DateTimeFormatter
+private val prettyDateTimeFormatter = DateTimeFormatter
     .ofPattern("dd/MM HH:mm")
+    .withZone(systemZone)
+
+private val prettyDateFormatter = DateTimeFormatter
+    .ofPattern("dd/MM")
     .withZone(systemZone)
