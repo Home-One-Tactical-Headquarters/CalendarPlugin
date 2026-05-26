@@ -31,7 +31,13 @@ class CalendarViewModel(
     fun startAutoRefresh(calendarUrl: String, refreshIntervalSeconds: Int, maxEvents: Int) {
         refreshJob = viewModelScope.launch {
             while (true) {
-                fetch(calendarUrl, maxEvents)
+                try {
+                    fetch(calendarUrl, maxEvents)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    println("CalendarViewModel: fetch failed, will retry: ${e.message}")
+                }
                 delay(refreshIntervalSeconds * 1000L)
             }
         }
@@ -56,24 +62,28 @@ class CalendarViewModel(
 
         val upcomingEvents = calendar.getComponents<VEvent>("VEVENT")
             .mapNotNull { event ->
-                val startDate = event.getDateTimeStart<OffsetDateTime>() ?: return@mapNotNull null
-                val endDate = event.getDateTimeEnd<OffsetDateTime>()
+                try {
+                    val startDate = event.getDateTimeStart<OffsetDateTime>() ?: return@mapNotNull null
 
-                val startDateValue = startDate.value
-                val endDateValue = endDate.value
+                    val startDateValue = startDate.value
+                    val endDateValue = event.getDateTimeEnd<OffsetDateTime>()?.value ?: startDateValue
 
-                val startEventTime = parseDateTime(startDateValue)
-                val endEventTime = parseDateTime(endDateValue)
+                    val startEventTime = parseDateTime(startDateValue)
+                    val endEventTime = parseDateTime(endDateValue)
 
-                if (!startEventTime.isAfter(now)) return@mapNotNull null
+                    if (!startEventTime.isAfter(now)) return@mapNotNull null
 
-                Event(
-                    summary = event.summary.value,
-                    startDate = startEventTime,
-                    endDate = endEventTime,
-                    timeUntil = startEventTime.epochSecond - now.epochSecond,
-                    isAllDay = !startDateValue.contains("T")
-                )
+                    Event(
+                        summary = event.summary?.value ?: "",
+                        startDate = startEventTime,
+                        endDate = endEventTime,
+                        timeUntil = startEventTime.epochSecond - now.epochSecond,
+                        isAllDay = !startDateValue.contains("T")
+                    )
+                } catch (e: Exception) {
+                    println("CalendarViewModel: skipping malformed event: ${e.message}")
+                    null
+                }
             }
             .sortedBy { event -> event.startDate }
             .take(maxEvents)
@@ -86,8 +96,8 @@ class CalendarViewModel(
             // Parse as UTC using the custom formatter, then convert to Instant
             java.time.ZonedDateTime.parse(dateValue, dateTimeFormatter.withZone(java.time.ZoneOffset.UTC)).toInstant()
         } else if (dateValue.contains("T")) {
-            LocalDate.parse(dateValue, dateFormatter)
-                .atStartOfDay(systemZone)
+            java.time.LocalDateTime.parse(dateValue, localDateTimeFormatter)
+                .atZone(systemZone)
                 .toInstant()
         } else {
             LocalDate.parse(dateValue, dateFormatter)
@@ -128,6 +138,9 @@ fun Instant.toPrettyString(isAllDay: Boolean): String {
 private val dateTimeFormatter = DateTimeFormatter
     .ofPattern("yyyyMMdd'T'HHmmss'Z'")
     .withZone(ZoneOffset.UTC)
+
+private val localDateTimeFormatter = DateTimeFormatter
+    .ofPattern("yyyyMMdd'T'HHmmss")
 
 private val dateFormatter = DateTimeFormatter
     .ofPattern("yyyyMMdd")
